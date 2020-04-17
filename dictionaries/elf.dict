@@ -1,0 +1,11 @@
+#
+# AFL dictionary for ELF
+# -----------------------------
+#
+# Created by AFLSmart's authors
+#
+#
+
+header_elf="\x7f\x45\x4c\x4b"
+machine_x86="\x3e\x00"
+machine_x64="\x03\x00"
