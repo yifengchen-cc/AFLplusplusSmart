@@ -512,6 +512,7 @@ void linearize_chunks(afl_state_t *afl,struct chunk *c, struct chunk ***first_ch
                       u32 *first_chunks_number, u32 *second_chunks_number,
                       u32 *deeper_chunks_number) {
   u32 first_level, second_level;
+  first_level=0;
 
   *first_chunks_number = 0;
   *second_chunks_number = 0;
