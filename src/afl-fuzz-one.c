@@ -1101,7 +1101,7 @@ u8 higher_order_fuzzing(afl_state_t *afl,struct queue_entry *current_queue_entry
               size_t new_size = *temp_len + source_child_chunk_size;
 
               if (new_size > alloc_size)
-                *out_buf = ck_realloc((*out_buf), new_size);
+                *out_buf = ck_maybe_grow((*out_buf), new_size);
 
               /* Read the testcase into a new buffer. */
 
