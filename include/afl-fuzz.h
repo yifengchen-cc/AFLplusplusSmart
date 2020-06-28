@@ -73,6 +73,8 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
+#include "smart-chunks.h"
+#include "smart-utils.h"
 
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || \
     defined(__NetBSD__) || defined(__DragonFly__)
@@ -131,7 +133,8 @@ struct queue_entry {
       var_behavior,                     /* Variable behavior?               */
       favored,                          /* Currently favored?               */
       fs_redundant,                     /* Marked as redundant in the fs?   */
-      fully_colorized;                  /* Do not run redqueen stage again  */
+      fully_colorized,                  /* Do not run redqueen stage again  */
+      parsed;                           /* Has parsing been attempted?      */
 
   u32 bitmap_size,                      /* Number of bits set in bitmap     */
       fuzz_level,                       /* Number of fuzzing iterations     */
@@ -144,7 +147,12 @@ struct queue_entry {
 
   u8 *trace_mini;                       /* Trace bytes, if kept             */
   u32 tc_ref;                           /* Trace bytes ref count            */
+  u8  validity;                       /* Percent validity (0-100)         */
 
+  struct chunk *chunk;
+  struct chunk *cached_chunk;         /* For caching to prevent slow      */
+                                      /* re-parsing of data to get the    */
+                                      /* chunks back                      */
   struct queue_entry *next,             /* Next element, if any             */
       *next_100;                        /* 100 elements ahead               */
 
@@ -196,6 +204,12 @@ enum {
   /* 02 */ STAGE_VAL_BE
 
 };
+/* Input Model Type */
+
+enum {
+  /* 00 */ MODEL_PEACH
+};
+
 
 #define operator_num 16
 #define swarm_num 5
@@ -397,7 +411,8 @@ typedef struct afl_state {
       *in_bitmap,                       /* Input bitmap                     */
       *file_extension,                  /* File extension                   */
       *orig_cmdline,                    /* Original command line            */
-      *infoexec;                       /* Command to execute on a new crash */
+      *infoexec,                        /* Command to execute on a new crash */
+      *input_model_file;                /* Input model file                 */
 
   u32 hang_tmout;                       /* Timeout used for hang det (ms)   */
 
@@ -443,7 +458,13 @@ typedef struct afl_state {
       deferred_mode,                    /* Deferred forkserver mode?        */
       fixed_seed,                       /* do not reseed                    */
       fast_cal,                         /* Try to calibrate faster?         */
-      disable_trim;                     /* Never trim in fuzz_one           */
+      disable_trim,                     /* Never trim in fuzz_one           */
+      smart_mode,        	        /* Smart fuzzing mode               */
+      stacking_mutation_mode,           /* Stacking mutations, mixed normal and higher-order    */
+                                        /* fuzzing mode                     */
+      smart_log_mode,            	/* Smart fuzzing log mode           */
+      smart_mutation_limit;   	        /* Limit the number of applications */
+                                        /* of smart fuzzing mode            */
 
   u8 *virgin_bits,                      /* Regions yet untouched by fuzzing */
       *virgin_tmout,                    /* Bits we haven't seen in tmouts   */
@@ -527,6 +548,12 @@ typedef struct afl_state {
       total_bitmap_entries;             /* Number of bitmaps counted        */
 
   s32 cpu_core_count;                   /* CPU core count                   */
+  u8 model_type,                        /* Input Model Type - PEACH */
+     validity_avg;                      /* Global average of input validity */
+
+  u64 parsed_inputs;                    /* Number of inputs parsed for      */
+                                        /* validity so far                  */
+
 
 #ifdef HAVE_AFFINITY
   s32 cpu_aff;                          /* Selected CPU core                */
@@ -987,4 +1014,10 @@ static inline u64 next_p2(u64 val) {
 }
 
 #endif
+/*aflsmart*/
+struct worklist {
+  struct chunk *chunk;
+  struct worklist *next;
+};
 
+#define LINEARIZATION_UNIT 8
