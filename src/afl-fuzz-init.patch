@@ -1,0 +1,27 @@
+--- AFLplusplus-2.63c/src/afl-fuzz-init.c	2020-04-09 16:23:37.000000000 +0800
++++ AFLplusplusSmart/src/afl-fuzz-init.c	2020-06-28 09:14:34.352287200 +0800
+@@ -1228,6 +1228,11 @@
+   if (delete_files(fn, CASE_PREFIX)) goto dir_cleanup_failed;
+   ck_free(fn);
+ 
++  /* Delete Chunks. */
++  fn = alloc_printf("%s/chunks", afl->out_dir);
++  if (delete_files(fn, "")) goto dir_cleanup_failed;
++  ck_free(fn);
++
+   /* And now, for some finishing touches. */
+ 
+   if (afl->file_extension) {
+@@ -1386,6 +1391,12 @@
+   if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
+   ck_free(tmp);
+ 
++  /* All chunks and repaired files. */
++
++  tmp = alloc_printf("%s/chunks", afl->out_dir);
++  if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
++  ck_free(tmp);
++
+   /* Generally useful file descriptors. */
+ 
+   afl->fsrv.dev_null_fd = open("/dev/null", O_RDWR);
