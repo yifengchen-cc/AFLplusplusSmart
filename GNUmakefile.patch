@@ -1,0 +1,13 @@
+--- AFLplusplus-2.63c/GNUmakefile	2020-04-09 16:23:37.000000000 +0800
++++ AFLplusplusSmart/GNUmakefile	2020-06-28 13:51:14.310800600 +0800
+@@ -297,8 +297,8 @@
+ src/third_party/libradamsa/libradamsa.so: src/third_party/libradamsa/libradamsa.c src/third_party/libradamsa/radamsa.h
+ 	$(MAKE) -C src/third_party/libradamsa/ CFLAGS="$(CFLAGS)"
+ 
+-afl-fuzz: $(COMM_HDR) include/afl-fuzz.h $(AFL_FUZZ_FILES) src/afl-common.o src/afl-sharedmem.o src/afl-forkserver.o | test_x86
+-	$(CC) $(CFLAGS) $(CFLAGS_FLTO) $(AFL_FUZZ_FILES) src/afl-common.o src/afl-sharedmem.o src/afl-forkserver.o -o $@ $(PYFLAGS) $(LDFLAGS)
++afl-fuzz: $(COMM_HDR) include/afl-fuzz.h $(AFL_FUZZ_FILES) src/afl-common.o src/afl-sharedmem.o src/afl-forkserver.o src/smart-chunks.o src/smart-utils.o | test_x86
++	$(CC) $(CFLAGS) $(CFLAGS_FLTO) $(AFL_FUZZ_FILES) src/afl-common.o src/afl-sharedmem.o src/afl-forkserver.o src/smart-chunks.o src/smart-utils.o -o $@ $(PYFLAGS) $(LDFLAGS)
+ 
+ afl-showmap: src/afl-showmap.c src/afl-common.o src/afl-sharedmem.o $(COMM_HDR) | test_x86
+ 	$(CC) $(CFLAGS) $(CFLAGS_FLTO) src/$@.c src/afl-common.o src/afl-sharedmem.o src/afl-forkserver.o -o $@ $(LDFLAGS)
