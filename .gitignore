@@ -42,10 +42,11 @@ qemu_mode/libcompcov/compcovtest
 as
 ld
 qemu_mode/qemu-*
-unicorn_mode/unicornafl/
 unicorn_mode/samples/*/\.test-*
 unicorn_mode/samples/*/output/
 core\.*
 test/unittests/unit_maybe_alloc
 test/unittests/unit_preallocable
 test/unittests/unit_list
+examples/afl_network_proxy/afl-network-server
+examples/afl_network_proxy/afl-network-client
