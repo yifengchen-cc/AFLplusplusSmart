@@ -1,0 +1,99 @@
+--- AFLplusplus-2.63c/include/afl-fuzz.h	2020-04-09 16:23:37.000000000 +0800
++++ AFLplusplusSmart/include/afl-fuzz.h	2020-06-28 13:32:52.108541500 +0800
+@@ -47,6 +47,8 @@
+ #include "sharedmem.h"
+ #include "forkserver.h"
+ #include "common.h"
++#include "smart-chunks.h"
++#include "smart-utils.h"
+ 
+ #include <stdio.h>
+ #include <unistd.h>
+@@ -129,7 +131,9 @@
+       var_behavior,                     /* Variable behavior?               */
+       favored,                          /* Currently favored?               */
+       fs_redundant,                     /* Marked as redundant in the fs?   */
+-      fully_colorized;                  /* Do not run redqueen stage again  */
++      fully_colorized,                  /* Do not run redqueen stage again  */
++      parsed;                           /* Has parsing been attempted?      */
++
+ 
+   u32 bitmap_size,                      /* Number of bits set in bitmap     */
+       fuzz_level,                       /* Number of fuzzing iterations     */
+@@ -143,6 +147,13 @@
+   u8 *trace_mini;                       /* Trace bytes, if kept             */
+   u32 tc_ref;                           /* Trace bytes ref count            */
+ 
++  u8  validity;                       /* Percent validity (0-100)         */
++
++  struct chunk *chunk;
++  struct chunk *cached_chunk;         /* For caching to prevent slow      */
++                                      /* re-parsing of data to get the    */
++                                      /* chunks back                      */
++
+   struct queue_entry *next,             /* Next element, if any             */
+       *next_100;                        /* 100 elements ahead               */
+ 
+@@ -208,6 +219,12 @@
+ 
+ };
+ 
++/* Input Model Type */
++
++enum {
++  /* 00 */ MODEL_PEACH
++};
++
+ #define operator_num 16
+ #define swarm_num 5
+ #define period_core 500000
+@@ -401,7 +418,8 @@
+       *in_bitmap,                       /* Input bitmap                     */
+       *file_extension,                  /* File extension                   */
+       *orig_cmdline,                    /* Original command line            */
+-      *infoexec;                       /* Command to execute on a new crash */
++      *infoexec,                        /* Command to execute on a new crash */
++      *input_model_file;                /* Input model file                 */
+ 
+   u32 hang_tmout;                       /* Timeout used for hang det (ms)   */
+ 
+@@ -448,7 +466,13 @@
+       deferred_mode,                    /* Deferred forkserver mode?        */
+       fixed_seed,                       /* do not reseed                    */
+       fast_cal,                         /* Try to calibrate faster?         */
+-      disable_trim;                     /* Never trim in fuzz_one           */
++      disable_trim,                     /* Never trim in fuzz_one           */
++      smart_mode,        	        /* Smart fuzzing mode               */
++      stacking_mutation_mode,           /* Stacking mutations, mixed normal and higher-order    */
++                                        /* fuzzing mode                     */
++      smart_log_mode,            	/* Smart fuzzing log mode           */
++      smart_mutation_limit;   	        /* Limit the number of applications */
++                                        /* of smart fuzzing mode            */
+ 
+   u8 virgin_bits[MAP_SIZE],             /* Regions yet untouched by fuzzing */
+       virgin_tmout[MAP_SIZE],           /* Bits we haven't seen in tmouts   */
+@@ -534,6 +558,13 @@
+ 
+   s32 cpu_core_count;                   /* CPU core count                   */
+ 
++  u8 model_type,                        /* Input Model Type - PEACH */
++     validity_avg;                      /* Global average of input validity */
++
++  u64 parsed_inputs;                    /* Number of inputs parsed for      */
++                                        /* validity so far                  */
++
++
+ #ifdef HAVE_AFFINITY
+   s32 cpu_aff;                          /* Selected CPU core                */
+ #endif                                                     /* HAVE_AFFINITY */
+@@ -975,4 +1006,10 @@
+ }
+ 
+ #endif
++/*aflsmart*/
++struct worklist {
++  struct chunk *chunk;
++  struct worklist *next;
++};
+ 
++#define LINEARIZATION_UNIT 8
